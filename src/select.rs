@@ -1,5 +1,7 @@
 use maud::{html, Markup};
 
+use crate::IdValue;
+
 ///Pour gérer l'attribut l'option a sélectionner dans un select
 pub fn checked_option(value_to_match: Option<&str>, value: &str) -> Option<bool> {
     match value_to_match {
@@ -7,43 +9,38 @@ pub fn checked_option(value_to_match: Option<&str>, value: &str) -> Option<bool>
         _ => None,
     }
 }
-
-// pub fn select(name: &str, class: &str, items: &[&str], selected: Option<&str>) -> Markup {
-//     html!(
-//         select name=(name) class=(class) {
-//         @for item in items {
-//             option value=(item) selected=[checked_option(selected, item)] {(item)};
-//         }
-//     })
-// }
-
-pub fn select(name: &str, class: &str, items: &[String], selected: Option<&str>) -> Markup {
+///Gestion des select/option
+pub fn select<A>(name: &str, class: &str, items: &[A], selected: Option<&str>) -> Markup 
+where A: IdValue
+{
     html!(
        select name=(name) class=(class) {
        @for item in items {
-          option value=(item) selected=[checked_option(selected, item)] {(item)};
+          option value=(&item.id()) selected=[checked_option(selected, &item.id())] {(item.value())};
        }
     })
 }
-
-// pub fn select<T>(name: &str, class: &str, items: &Vec<T>, selected: Option<&str>) -> Markup
-// where
-//     T: Into<String>,
-//  {
-//     html!(
-//         select name=(name) class=(class) {
-//         @for item in items {
-//             @let s: String = item.into();
-//             option value=(s) selected=[checked_option(selected, &s)] {(s)};
-//         }
-//     })
-// }
 
 #[cfg(test)]
 mod tests {
     use maud::html;
 
-    use crate::select::{select, checked_option};
+    use crate::{select::{select, checked_option}, IdValue};
+
+    struct Toto {
+        id: i32,
+        code: String
+    }
+
+    impl IdValue for Toto {
+        fn id(&self) -> String {
+            self.id.to_string()
+        }
+
+        fn value(&self) -> String {
+            self.code.clone()
+        }
+    }    
 
     #[test]
     fn select_option() {
@@ -58,7 +55,10 @@ mod tests {
 
     #[test]
     fn select_tag_with_no_selected() {
-        let items = vec!["1".to_owned(), "2".to_owned()];
+        let items = vec![
+            Toto { id: 1, code: "A".to_owned()},
+            Toto { id: 2, code: "B".to_owned()},
+        ];
 
         let with_selected_option = html!((select("mon_select", "selected bordered", &items, None)));
 
@@ -66,8 +66,8 @@ mod tests {
             with_selected_option.into_string(),
             concat!(
                 r#"<select name="mon_select" class="selected bordered">"#,
-                r#"<option value="1">1</option>"#,
-                r#"<option value="2">2</option>"#,
+                r#"<option value="1">A</option>"#,
+                r#"<option value="2">B</option>"#,
                 r#"</select>"#,
             )
         );
@@ -75,17 +75,20 @@ mod tests {
 
     #[test]
     fn select_tag_with_selected() {
-        let items = vec!["1".to_owned(), "2".to_owned()];
+        let items = vec![
+            Toto { id: 1, code: "A".to_owned()},
+            Toto { id: 2, code: "B".to_owned()},
+        ];
 
         let with_selected_option =
-            html!((select("mon_select", "selected bordered", &items, Some("2"))));
+            html!((select("mon_select", "c", &items, Some("2"))));
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
-                r#"<select name="mon_select" class="selected bordered">"#,
-                r#"<option value="1">1</option>"#,
-                r#"<option value="2" selected="true">2</option>"#,
+                r#"<select name="mon_select" class="c">"#,
+                r#"<option value="1">A</option>"#,
+                r#"<option value="2" selected="true">B</option>"#,
                 r#"</select>"#,
             )
         );
@@ -93,17 +96,20 @@ mod tests {
 
     #[test]
     fn select_tag_with_bad_selected() {
-        let items = vec!["1".to_owned(), "2".to_owned()];
+        let items = vec![
+            Toto { id: 1, code: "A".to_owned()},
+            Toto { id: 2, code: "B".to_owned()},
+        ];
 
         let with_selected_option =
-            html!((select("mon_select", "selected bordered", &items, Some("3"))));
+            html!((select("mon_select", "c", &items, Some("3"))));
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
-                r#"<select name="mon_select" class="selected bordered">"#,
-                r#"<option value="1">1</option>"#,
-                r#"<option value="2">2</option>"#,
+                r#"<select name="mon_select" class="c">"#,
+                r#"<option value="1">A</option>"#,
+                r#"<option value="2">B</option>"#,
                 r#"</select>"#,
             )
         );
