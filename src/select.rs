@@ -10,14 +10,44 @@ pub fn checked_option(value_to_match: Option<&str>, value: &str) -> Option<bool>
     }
 }
 ///Gestion des select/option
-pub fn select<A>(name: &str, class: &str, items: &[A], selected: Option<&str>) -> Markup 
-where A: IdValue
+pub fn select<A>(
+    name: &str,
+    class: &str,
+    items: &[A],
+    selected: Option<&str>
+) -> Markup
+where
+    A: IdValue
 {
+    let tuples = 
+        items
+            .iter()
+            .map(|x| (x.id(), x.value()))
+            .collect::<Vec<_>>();
+
+    build_select(name, class, &tuples, selected)
+}
+
+pub fn select_str(
+    name: &str,
+    class: &str,
+    items: &[(String, String)],
+    selected: Option<&str>
+) -> Markup {
+    build_select(name, class, items, selected)
+}
+
+fn build_select(
+    name: &str,
+    class: &str,
+    items: &[(String, String)],
+    selected: Option<&str>,
+) -> Markup {
     html!(
-       select name=(name) class=(class) {
-       @for item in items {
-          option value=(&item.id()) selected=[checked_option(selected, &item.id())] {(item.value())};
-       }
+        select name=(name) class=(class) {
+        @for item in items {
+            option value=(item.0) selected=[checked_option(selected, item.0.as_str())] {(item.1)};        
+        }
     })
 }
 
@@ -25,11 +55,14 @@ where A: IdValue
 mod tests {
     use maud::html;
 
-    use crate::{select::{select, checked_option}, IdValue};
+    use crate::{
+        select::{checked_option, select, select_str},
+        IdValue,
+    };
 
     struct Toto {
         id: i32,
-        code: String
+        code: String,
     }
 
     impl IdValue for Toto {
@@ -40,7 +73,7 @@ mod tests {
         fn value(&self) -> String {
             self.code.clone()
         }
-    }    
+    }
 
     #[test]
     fn select_option() {
@@ -56,8 +89,14 @@ mod tests {
     #[test]
     fn select_tag_with_no_selected() {
         let items = vec![
-            Toto { id: 1, code: "A".to_owned()},
-            Toto { id: 2, code: "B".to_owned()},
+            Toto {
+                id: 1,
+                code: "A".to_owned(),
+            },
+            Toto {
+                id: 2,
+                code: "B".to_owned(),
+            },
         ];
 
         let with_selected_option = html!((select("mon_select", "selected bordered", &items, None)));
@@ -76,12 +115,11 @@ mod tests {
     #[test]
     fn select_tag_with_selected() {
         let items = vec![
-            Toto { id: 1, code: "A".to_owned()},
-            Toto { id: 2, code: "B".to_owned()},
+            ("1".to_string(), "A".to_string()),
+            ("2".to_string(), "B".to_string()),
         ];
 
-        let with_selected_option =
-            html!((select("mon_select", "c", &items, Some("2"))));
+        let with_selected_option = html!((select_str("mon_select", "c", &items, Some("2"))));
 
         assert_eq!(
             with_selected_option.into_string(),
@@ -97,12 +135,37 @@ mod tests {
     #[test]
     fn select_tag_with_bad_selected() {
         let items = vec![
-            Toto { id: 1, code: "A".to_owned()},
-            Toto { id: 2, code: "B".to_owned()},
+            Toto {
+                id: 1,
+                code: "A".to_owned(),
+            },
+            Toto {
+                id: 2,
+                code: "B".to_owned(),
+            },
         ];
 
-        let with_selected_option =
-            html!((select("mon_select", "c", &items, Some("3"))));
+        let with_selected_option = html!((select("mon_select", "c", &items, Some("3"))));
+
+        assert_eq!(
+            with_selected_option.into_string(),
+            concat!(
+                r#"<select name="mon_select" class="c">"#,
+                r#"<option value="1">A</option>"#,
+                r#"<option value="2">B</option>"#,
+                r#"</select>"#,
+            )
+        );
+    }
+
+    #[test]
+    fn select_tag_with_string() {
+        let items = vec![
+            ("1".to_string(), "A".to_string()),
+            ("2".to_string(), "B".to_string()),
+        ];
+
+        let with_selected_option = html!((select_str("mon_select", "c", &items, Some("3"))));
 
         assert_eq!(
             with_selected_option.into_string(),
