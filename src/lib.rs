@@ -1,7 +1,3 @@
 pub mod checkbox;
+pub mod id_value;
 pub mod select;
-
-pub trait IdValue: Sized {
-    fn id(&self) -> String;
-    fn value(&self) -> String;
-}

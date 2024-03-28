@@ -1,6 +1,6 @@
 use maud::{html, Markup};
 
-use crate::IdValue;
+use crate::id_value::IdValue;
 
 ///Pour gérer l'attribut l'option a sélectionner dans un select
 pub fn checked_option(value_to_match: Option<&str>, value: &str) -> Option<bool> {
@@ -10,20 +10,14 @@ pub fn checked_option(value_to_match: Option<&str>, value: &str) -> Option<bool>
     }
 }
 ///Gestion des select/option
-pub fn select<A>(
-    name: &str,
-    class: &str,
-    items: &[A],
-    selected: Option<&str>
-) -> Markup
+pub fn select<A>(name: &str, class: &str, items: &[Box<A>], selected: Option<&str>) -> Markup
 where
-    A: IdValue
+    A: IdValue + ?Sized,
 {
-    let tuples = 
-        items
-            .iter()
-            .map(|x| (x.id(), x.value()))
-            .collect::<Vec<_>>();
+    let tuples = items
+        .iter()
+        .map(|x| (x.id(), x.value()))
+        .collect::<Vec<_>>();
 
     build_select(name, class, &tuples, selected)
 }
@@ -32,7 +26,7 @@ pub fn select_str(
     name: &str,
     class: &str,
     items: &[(String, String)],
-    selected: Option<&str>
+    selected: Option<&str>,
 ) -> Markup {
     build_select(name, class, items, selected)
 }
@@ -46,7 +40,7 @@ fn build_select(
     html!(
         select name=(name) class=(class) {
         @for item in items {
-            option value=(item.0) selected=[checked_option(selected, item.0.as_str())] {(item.1)};        
+            option value=(item.0) selected=[checked_option(selected, item.0.as_str())] {(item.1)};
         }
     })
 }
@@ -56,8 +50,8 @@ mod tests {
     use maud::html;
 
     use crate::{
+        id_value::{IdValue, KVBuilderInterface, KeyValue},
         select::{checked_option, select, select_str},
-        IdValue,
     };
 
     struct Toto {
@@ -65,15 +59,24 @@ mod tests {
         code: String,
     }
 
-    impl IdValue for Toto {
-        fn id(&self) -> String {
-            self.id.to_string()
-        }
-
-        fn value(&self) -> String {
-            self.code.clone()
+    impl KVBuilderInterface for Toto {
+        fn get_kv(&self) -> crate::id_value::KeyValue {
+            KeyValue {
+                key: self.id.to_string(),
+                value: self.code.clone(),
+            }
         }
     }
+
+    // impl IdValue for Toto {
+    //     fn id(&self) -> String {
+    //         self.id.to_string()
+    //     }
+
+    //     fn value(&self) -> String {
+    //         self.code.clone()
+    //     }
+    // }
 
     #[test]
     fn select_option() {
@@ -88,15 +91,17 @@ mod tests {
 
     #[test]
     fn select_tag_with_no_selected() {
-        let items = vec![
+        let items: Vec<Box<dyn IdValue>> = vec![
             Toto {
                 id: 1,
                 code: "A".to_owned(),
-            },
+            }
+            .get_kv_box(),
             Toto {
                 id: 2,
                 code: "B".to_owned(),
-            },
+            }
+            .get_kv_box(),
         ];
 
         let with_selected_option = html!((select("mon_select", "selected bordered", &items, None)));
@@ -134,15 +139,21 @@ mod tests {
 
     #[test]
     fn select_tag_with_bad_selected() {
-        let items = vec![
-            Toto {
-                id: 1,
-                code: "A".to_owned(),
-            },
-            Toto {
-                id: 2,
-                code: "B".to_owned(),
-            },
+        let items: Vec<Box<dyn IdValue>> = vec![
+            Box::new(
+                Toto {
+                    id: 1,
+                    code: "A".to_owned(),
+                }
+                .get_kv(),
+            ),
+            Box::new(
+                Toto {
+                    id: 2,
+                    code: "B".to_owned(),
+                }
+                .get_kv(),
+            ),
         ];
 
         let with_selected_option = html!((select("mon_select", "c", &items, Some("3"))));
