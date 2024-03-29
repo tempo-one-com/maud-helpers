@@ -1,7 +1,13 @@
 == Description
-Ensemble de petites fonctions pour faciliter la création des tags Html avec Maud
+Ensemble de petites fonctions pour faciliter la création des tags Html avec Maud (utilisation des class Bootstrap)
+
+=== Select
+Les struct à afficher dans la liste doivent implementer KeyValueInterface
 
 == Versions
+0.5.0 - 29/03/24
+Simplification. 1 seul trait KeyValueInterface avec 1 méthode : to_kv()
+
 0.4.0 - 28/03/24
 Ajout struct KeyValue et interface KVBuilderInterface
 
