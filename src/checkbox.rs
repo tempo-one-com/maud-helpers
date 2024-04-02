@@ -36,6 +36,13 @@ impl Checkbox {
         }
     }
 
+    pub fn class(self, class: &str) -> Self {
+        Self {
+            class: Some(class.to_owned()),
+            ..self
+        }
+    }
+
     pub fn checked(self, is_checked: bool) -> Self {
         Self { is_checked, ..self }
     }
