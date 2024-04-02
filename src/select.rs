@@ -8,36 +8,48 @@ pub fn checked_option(reference: Option<KeyValue>, value: &str) -> bool {
 }
 
 ///Gestion des select/option
-pub fn select<A>(name: &str, class: Option<&str>, items: &[A], selected: Option<KeyValue>) -> Markup
+pub fn select<A>(
+    name: &str,
+    label: &str,
+    class: Option<&str>,
+    items: &[A],
+    selected: Option<KeyValue>,
+) -> Markup
 where
     A: KeyValueInterface,
 {
     let tuples = items.iter().map(|x| x.to_kv()).collect::<Vec<_>>();
 
-    build_select(name, class, &tuples, selected)
+    build_select(name, label, class, &tuples, selected)
 }
 pub fn select_kv(
     name: &str,
+    label: &str,
     class: Option<&str>,
     items: &[KeyValue],
-    selected: Option<KeyValue>,
+    value: Option<KeyValue>,
 ) -> Markup {
-    build_select(name, class, items, selected)
+    build_select(name, label, class, items, value)
 }
 
 fn build_select(
     name: &str,
+    label: &str,
     class: Option<&str>,
     items: &[KeyValue],
-    selected: Option<KeyValue>,
+    value: Option<KeyValue>,
 ) -> Markup {
     let css = class.map(|x| format!(" {x}")).unwrap_or_default();
 
     html!(
+        div class="form-floating" {
         select name=(name) class={"form-select" (css)} {
         @for item in items {
-            option value=(item.key) selected[(checked_option(selected.clone(), &item.key))]  {(item.value)};
-        }
+            option
+                value=(item.key)
+                selected[(checked_option(value.clone(), &item.key))]  {(item.value)};
+        }}
+        label {(label)}
     })
 }
 
@@ -88,16 +100,26 @@ mod tests {
     fn select_tag_with_no_selected() {
         let items = vec![Toto::new(1, "A"), Toto::new(2, "B")];
 
-        let with_selected_option =
-            html!((select("mon_select", Some("selected bordered"), &items, None)));
+        let with_selected_option = html!(
+            (select(
+                "mon_select",
+                "choisir",
+                Some("selected bordered"),
+                &items,
+                None
+            ))
+        );
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
+                r#"<div class="form-floating">"#,
                 r#"<select name="mon_select" class="form-select selected bordered">"#,
                 r#"<option value="1">A</option>"#,
                 r#"<option value="2">B</option>"#,
                 r#"</select>"#,
+                r#"<label>choisir</label>"#,
+                r#"</div>"#,
             )
         );
     }
@@ -106,16 +128,26 @@ mod tests {
     fn select_tag_with_selected() {
         let items = vec![Toto::new(1, "A"), Toto::new(2, "B")];
 
-        let with_selected_option =
-            html!((select("mon_select", None, &items, Some(KeyValue::new_key("2")))));
+        let with_selected_option = html!(
+            (select(
+                "mon_select",
+                "choisir",
+                None,
+                &items,
+                Some(KeyValue::new_key("2"))
+            ))
+        );
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
+                r#"<div class="form-floating">"#,
                 r#"<select name="mon_select" class="form-select">"#,
                 r#"<option value="1">A</option>"#,
                 r#"<option value="2" selected>B</option>"#,
                 r#"</select>"#,
+                r#"<label>choisir</label>"#,
+                r#"</div>"#,
             )
         );
     }
@@ -152,15 +184,18 @@ mod tests {
         let selected = KeyValue::new("2", "B");
 
         let with_selected_option =
-            html!((select_kv("mon_select", Some("c"), &items, Some(selected))));
+            html!((select_kv("mon_select", "choisir", Some("c"), &items, Some(selected))));
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
+                r#"<div class="form-floating">"#,
                 r#"<select name="mon_select" class="form-select c">"#,
                 r#"<option value="1">A</option>"#,
                 r#"<option value="2" selected>B</option>"#,
                 r#"</select>"#,
+                r#"<label>choisir</label>"#,
+                r#"</div>"#,
             )
         );
     }
