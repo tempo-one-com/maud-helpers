@@ -5,9 +5,6 @@ Ensemble de petites fonctions pour faciliter la création des tags Html avec Mau
 Les struct à afficher dans la liste doivent implementer KeyValueInterface
 
 == Versions
-0.8.0 - 02-04-24::
-Création de struct Text, Select, Checkbox
-
 0.7.0 - 02-04-24::
 Grosse simplification par utilisation builder
 
