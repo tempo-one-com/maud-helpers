@@ -16,6 +16,14 @@ where
 
     build_select(name, class, &tuples, selected)
 }
+pub fn select_kv(
+    name: &str,
+    class: Option<&str>,
+    items: &[KeyValue],
+    selected: Option<KeyValue>,
+) -> Markup {
+    build_select(name, class, items, selected)
+}
 
 fn build_select(
     name: &str,
@@ -39,7 +47,7 @@ mod tests {
 
     use crate::{
         key_value::{KeyValue, KeyValueInterface},
-        select::{checked_option, select},
+        select::{checked_option, select, select_kv},
     };
 
     struct Toto {
@@ -138,20 +146,22 @@ mod tests {
     //     );
     // }
 
-    // #[test]
-    // fn select_tag_with_string() {
-    //     let items = vec![KeyValue::new("1", "A"), KeyValue::new("2", "B")];
+    #[test]
+    fn select_tag_with_string() {
+        let items = vec![KeyValue::new("1", "A"), KeyValue::new("2", "B")];
+        let selected = KeyValue::new("2", "B");
 
-    //     let with_selected_option = html!((select("mon_select", Some("c"), &items, Some("3"))));
+        let with_selected_option =
+            html!((select_kv("mon_select", Some("c"), &items, Some(selected))));
 
-    //     assert_eq!(
-    //         with_selected_option.into_string(),
-    //         concat!(
-    //             r#"<select name="mon_select" class="c">"#,
-    //             r#"<option value="1">A</option>"#,
-    //             r#"<option value="2">B</option>"#,
-    //             r#"</select>"#,
-    //         )
-    //     );
-    // }
+        assert_eq!(
+            with_selected_option.into_string(),
+            concat!(
+                r#"<select name="mon_select" class="form-select c">"#,
+                r#"<option value="1">A</option>"#,
+                r#"<option value="2" selected>B</option>"#,
+                r#"</select>"#,
+            )
+        );
+    }
 }
