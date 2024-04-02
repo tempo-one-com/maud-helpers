@@ -1,70 +1,87 @@
-use maud::{html, Markup};
+use maud::{html, Markup, Render};
+
+use crate::tag_options::TagOptions;
 
 #[derive(Clone, Debug, Default)]
-pub struct TextOptions {
-    id: Option<String>,
-    placeholder: Option<String>,
-    hint: Option<String>,
+pub enum TextType {
+    #[default]
+    Text,
+
+    Email,
+    Number,
 }
 
-impl TextOptions {
-    pub fn new() -> Self {
+#[derive(Clone, Debug, Default)]
+pub struct Text {
+    name: String,
+    label: String,
+    my_type: TextType,
+    value: Option<String>,
+    class: Option<String>,
+    options: TagOptions,
+}
+
+impl Text {
+    pub fn new(name: &str, label: &str, value: Option<&str>) -> Self {
         Self {
+            name: name.to_owned(),
+            label: label.to_owned(),
+            value: value.map(ToOwned::to_owned),
             ..Default::default()
         }
     }
 
-    pub fn id(self, value: &str) -> Self {
+    pub fn text_type(self, new_type: TextType) -> Self {
         Self {
-            id: Some(value.to_owned()),
+            my_type: new_type,
             ..self
         }
     }
 
-    pub fn placeholder(self, value: &str) -> Self {
+    pub fn class(self, class: &str) -> Self {
         Self {
-            placeholder: Some(value.to_owned()),
+            class: Some(class.to_owned()),
             ..self
         }
     }
 
-    pub fn hint(self, value: &str) -> Self {
-        Self {
-            hint: Some(value.to_owned()),
-            ..self
-        }
+    pub fn options(self, options: TagOptions) -> Self {
+        Self { options, ..self }
     }
 }
 
-pub fn text(name: &str, label: &str, value: Option<&str>, class: Option<&str>) -> Markup {
-    text_opt(name, label, value, class, TextOptions::new())
-}
+impl Render for Text {
+    fn render(&self) -> Markup {
+        let css = format!(
+            "form-floating{}",
+            self.class
+                .as_ref()
+                .map(|x| format!(" {x}"))
+                .unwrap_or_default()
+        );
 
-pub fn text_opt(
-    name: &str,
-    label: &str,
-    value: Option<&str>,
-    class: Option<&str>,
-    options: TextOptions,
-) -> Markup {
-    let class = format!(
-        "form-floating{}",
-        class.map(|x| format!(" {x}")).unwrap_or_default()
-    );
+        let type_str = match self.my_type {
+            TextType::Text => "text",
+            TextType::Email => "email",
+            TextType::Number => "number",
+        };
 
-    html!(
-        div class=(class) {
-            input type="text" class="form-control"
-                name=(name)
-                id=[options.id]
-                value=[value]
-                placeholder=[options.placeholder];
-            label {(label)}
-            @if let Some(hint) = options.hint {
-                div class="form-text" {(hint)}
+        html!(
+            div class=(css) {
+                input
+                    type=(type_str)
+                    class="form-control"
+                    name=(self.name)
+                    id=[self.options.clone().id]
+                    value=[self.value.clone()]
+                    placeholder=[self.options.clone().placeholder];
+                label {(self.label)}
+                @if let Some(hint) = self.options.clone().hint {
+                    div class="form-text" {(hint)}
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 #[cfg(test)]
@@ -73,10 +90,10 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let text = text("name", "Name", None, None);
+        let text = Text::new("name", "Name", None);
 
         assert_eq!(
-            text.into_string(),
+            text.render().into_string(),
             concat!(
                 r#"<div class="form-floating">"#,
                 r#"<input type="text" class="form-control" name="name">"#,
@@ -87,10 +104,10 @@ mod tests {
 
     #[test]
     fn test_with_class() {
-        let text = text("name", "Name", None, Some("mb-3"));
+        let text = Text::new("name", "Name", None).class("mb-3");
 
         assert_eq!(
-            text.into_string(),
+            text.render().into_string(),
             concat!(
                 r#"<div class="form-floating mb-3">"#,
                 r#"<input type="text" class="form-control" name="name">"#,
@@ -101,11 +118,11 @@ mod tests {
 
     #[test]
     fn test_id_and_hint() {
-        let opt = TextOptions::new().id("my_id").hint("indice");
-        let text = text_opt("name", "Name", None, Some("mb-3"), opt);
+        let opt = TagOptions::new().id("my_id").hint("indice");
+        let text = Text::new("name", "Name", None).class("mb-3").options(opt);
 
         assert_eq!(
-            text.into_string(),
+            text.render().into_string(),
             concat!(
                 r#"<div class="form-floating mb-3">"#,
                 r#"<input type="text" class="form-control" name="name" id="my_id">"#,
@@ -118,11 +135,11 @@ mod tests {
 
     #[test]
     fn test_placeholder() {
-        let opt = TextOptions::new().hint("indice");
-        let text = text_opt("name", "Name", None, Some("mb-3"), opt);
+        let opt = TagOptions::new().hint("indice");
+        let text = Text::new("name", "Name", None).class("mb-3").options(opt);
 
         assert_eq!(
-            text.into_string(),
+            text.render().into_string(),
             concat!(
                 r#"<div class="form-floating mb-3">"#,
                 r#"<input type="text" class="form-control" name="name">"#,

@@ -1,8 +1,5 @@
 pub trait KeyValueInterface {
     fn to_kv(&self) -> KeyValue;
-    // fn to_kv_box(&self) -> Box<KeyValue> {
-    //     Box::new(self.to_kv())
-    // }
 }
 
 #[derive(Clone, Debug)]
