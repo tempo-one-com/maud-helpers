@@ -13,34 +13,34 @@ pub enum CheckboxType {
 pub struct Checkbox {
     name: String,
     label: String,
-    class: Option<String>,
+    class: String,
     my_type: CheckboxType,
     is_checked: bool,
 }
 
 impl Checkbox {
-    pub fn new(name: &str, label: &str) -> Self {
+    fn new(my_type: CheckboxType, name: &str, label: &str) -> Self {
         Self {
             name: name.to_owned(),
             label: label.to_owned(),
+            class: "form-check".to_owned(),
+            my_type,
             ..Default::default()
         }
     }
 
-    pub fn new_radio(name: &str, label: &str) -> Self {
-        Self {
-            name: name.to_owned(),
-            label: label.to_owned(),
-            my_type: CheckboxType::Radio,
-            ..Default::default()
-        }
+    pub fn check(name: &str, label: &str) -> Self {
+        Self::new(CheckboxType::Check, name, label)
     }
 
-    pub fn class(self, class: &str) -> Self {
-        Self {
-            class: Some(class.to_owned()),
-            ..self
-        }
+    pub fn radio(name: &str, label: &str) -> Self {
+        Self::new(CheckboxType::Radio, name, label)
+    }
+
+    pub fn class(self, classes: &str) -> Self {
+        let class = format!("{} {}", self.class, classes);
+
+        Self { class, ..self }
     }
 
     pub fn checked(self, is_checked: bool) -> Self {
@@ -50,20 +50,13 @@ impl Checkbox {
 
 impl Render for Checkbox {
     fn render(&self) -> Markup {
-        let css = format!(
-            "form-check{}",
-            self.class
-                .as_ref()
-                .map(|x| format!(" {x}"))
-                .unwrap_or_default()
-        );
         let type_str = match self.my_type {
             CheckboxType::Check => "checkbox",
             CheckboxType::Radio => "radio",
         };
 
         html!(
-            div class=(css) {
+            div class=(self.class) {
                 input
                     name=(self.name)
                     class="form-check-input"
@@ -83,7 +76,7 @@ mod tests {
 
     #[test]
     fn checkbox_default() {
-        let on = Checkbox::new("cbx", "Choisir");
+        let on = Checkbox::check("cbx", "Choisir");
 
         assert_eq!(
             on.render().into_string(),
@@ -98,12 +91,14 @@ mod tests {
 
     #[test]
     fn checkbox_checked() {
-        let on = Checkbox::new("cbx", "Choisir").checked(true);
+        let on = Checkbox::check("cbx", "Choisir")
+            .class("my-class")
+            .checked(true);
 
         assert_eq!(
             on.render().into_string(),
             concat!(
-                r#"<div class="form-check">"#,
+                r#"<div class="form-check my-class">"#,
                 r#"<input name="cbx" class="form-check-input" type="checkbox" checked>"#,
                 r#"<label class="form-check-label">Choisir</label>"#,
                 r#"</div>"#,

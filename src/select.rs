@@ -11,7 +11,7 @@ pub struct Select {
     label: String,
     items: Vec<KeyValue>,
     value: Option<String>,
-    class: Option<String>,
+    class: String,
     options: TagOptions,
 }
 
@@ -29,6 +29,7 @@ impl Select {
             label: label.to_owned(),
             items: kvs,
             value: value.map(Into::into),
+            class: "form-floating".to_owned(),
             ..Default::default()
         }
     }
@@ -44,6 +45,7 @@ impl Select {
             label: label.to_owned(),
             items: items.to_owned(),
             value: value.map(Into::into),
+            class: "form-floating".to_owned(),
             ..Default::default()
         }
     }
@@ -61,7 +63,7 @@ impl Select {
 
     pub fn class(self, class: &str) -> Self {
         Self {
-            class: Some(class.to_owned()),
+            class: format!("{} {class}", self.class),
             ..self
         }
     }
@@ -69,17 +71,11 @@ impl Select {
 
 impl Render for Select {
     fn render(&self) -> Markup {
-        let css = self
-            .class
-            .as_ref()
-            .map(|x| format!(" {x}"))
-            .unwrap_or_default();
-
         html!(
-            div class="form-floating" {
+            div class=(self.class) {
             select
                 name=(self.name)
-                class={"form-select" (css)}
+                class="form-select"
                 id=[self.options.clone().id]
                {
             @for item in &self.items {
@@ -139,16 +135,14 @@ mod tests {
     fn select_tag_with_no_selected() {
         let items = vec![Toto::new(1, "A"), Toto::new(2, "B")];
 
-        let with_selected_option = html!(
-            (Select::new("mon_select", "choisir", &items, None::<String>)
-                .class("selected bordered"))
-        );
+        let with_selected_option =
+            html!((Select::new("mon_select", "choisir", &items, None::<String>).class("mb-4")));
 
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
-                r#"<div class="form-floating">"#,
-                r#"<select name="mon_select" class="form-select selected bordered">"#,
+                r#"<div class="form-floating mb-4">"#,
+                r#"<select name="mon_select" class="form-select">"#,
                 r#"<option value="1">A</option>"#,
                 r#"<option value="2">B</option>"#,
                 r#"</select>"#,
@@ -191,8 +185,8 @@ mod tests {
         assert_eq!(
             with_selected_option.into_string(),
             concat!(
-                r#"<div class="form-floating">"#,
-                r#"<select name="mon_select" class="form-select c" id="my_id">"#,
+                r#"<div class="form-floating c">"#,
+                r#"<select name="mon_select" class="form-select" id="my_id">"#,
                 r#"<option value="1">A</option>"#,
                 r#"<option value="2" selected>B</option>"#,
                 r#"</select>"#,

@@ -17,7 +17,7 @@ pub struct TextField {
     label: String,
     my_type: TextFieldType,
     value: Option<String>,
-    class: Option<String>,
+    class: String,
     options: TagOptions,
 }
 
@@ -27,6 +27,7 @@ impl TextField {
             name: name.to_owned(),
             label: label.to_owned(),
             value: value.map(ToOwned::to_owned),
+            class: "form-floating".to_owned(),
             my_type,
             ..Default::default()
         }
@@ -46,7 +47,7 @@ impl TextField {
 
     pub fn class(self, class: &str) -> Self {
         Self {
-            class: Some(class.to_owned()),
+            class: format!("{} {class}", self.class),
             ..self
         }
     }
@@ -58,14 +59,6 @@ impl TextField {
 
 impl Render for TextField {
     fn render(&self) -> Markup {
-        let css = format!(
-            "form-floating{}",
-            self.class
-                .as_ref()
-                .map(|x| format!(" {x}"))
-                .unwrap_or_default()
-        );
-
         let type_str = match self.my_type {
             TextFieldType::Text => "text",
             TextFieldType::Email => "email",
@@ -73,7 +66,7 @@ impl Render for TextField {
         };
 
         html!(
-            div class=(css) {
+            div class=(self.class) {
                 input
                     type=(type_str)
                     class="form-control"
