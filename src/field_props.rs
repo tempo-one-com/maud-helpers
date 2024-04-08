@@ -1,15 +1,18 @@
 #[derive(Clone, Debug, Default)]
-pub struct TagOptions {
+pub struct Props {
+    pub value: Option<String>,
     pub id: Option<String>,
-    pub placeholder: Option<String>,
     pub hint: Option<String>,
     pub required: bool,
+    pub placeholder: Option<String>,
+    pub error: Option<String>,
 }
 
-impl TagOptions {
-    pub fn new() -> Self {
+impl Props {
+    pub fn value(self, value: &str) -> Self {
         Self {
-            ..Default::default()
+            value: Some(value.to_owned()),
+            ..self
         }
     }
 
@@ -20,16 +23,16 @@ impl TagOptions {
         }
     }
 
-    pub fn placeholder(self, value: &str) -> Self {
+    pub fn hint(self, value: &str) -> Self {
         Self {
-            placeholder: Some(value.to_owned()),
+            hint: Some(value.to_owned()),
             ..self
         }
     }
 
-    pub fn hint(self, value: &str) -> Self {
+    pub fn placeholder(self, value: &str) -> Self {
         Self {
-            hint: Some(value.to_owned()),
+            placeholder: Some(value.to_owned()),
             ..self
         }
     }

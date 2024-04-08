@@ -1,6 +1,6 @@
 use maud::{html, Markup, Render};
 
-use crate::tag_options::TagOptions;
+use crate::field_props::Props;
 
 #[derive(Clone, Debug, Default)]
 pub enum TextFieldType {
@@ -16,33 +16,35 @@ pub struct TextField {
     name: String,
     label: String,
     my_type: TextFieldType,
-    value: Option<String>,
     class: String,
-    options: TagOptions,
+    props: Props,
 }
 
 impl TextField {
-    fn new(my_type: TextFieldType, name: &str, label: &str, value: Option<&str>) -> Self {
+    pub fn text(name: &str, label: &str) -> Self {
+        Self::new(TextFieldType::Text, name, label)
+    }
+
+    pub fn email(name: &str, label: &str) -> Self {
+        Self::new(TextFieldType::Email, name, label)
+    }
+
+    pub fn number(name: &str, label: &str) -> Self {
+        Self::new(TextFieldType::Number, name, label)
+    }
+
+    fn new(my_type: TextFieldType, name: &str, label: &str) -> Self {
         Self {
             name: name.to_owned(),
             label: label.to_owned(),
-            value: value.map(ToOwned::to_owned),
             class: "form-floating".to_owned(),
             my_type,
             ..Default::default()
         }
     }
 
-    pub fn text(name: &str, label: &str, value: Option<&str>) -> Self {
-        Self::new(TextFieldType::Text, name, label, value)
-    }
-
-    pub fn email(name: &str, label: &str, value: Option<&str>) -> Self {
-        Self::new(TextFieldType::Email, name, label, value)
-    }
-
-    pub fn number(name: &str, label: &str, value: Option<&str>) -> Self {
-        Self::new(TextFieldType::Number, name, label, value)
+    pub fn props(self, props: Props) -> Self {
+        Self { props, ..self }
     }
 
     pub fn class(self, class: &str) -> Self {
@@ -50,10 +52,6 @@ impl TextField {
             class: format!("{} {class}", self.class),
             ..self
         }
-    }
-
-    pub fn options(self, options: TagOptions) -> Self {
-        Self { options, ..self }
     }
 }
 
@@ -71,11 +69,11 @@ impl Render for TextField {
                     type=(type_str)
                     class="form-control"
                     name=(self.name)
-                    id=[self.options.clone().id]
-                    value=[self.value.clone()]
-                    placeholder=[self.options.clone().placeholder];
+                    id=[self.props.clone().id]
+                    value=[self.props.value.clone()]
+                    placeholder=[self.props.clone().placeholder];
                 label {(self.label)}
-                @if let Some(hint) = self.options.clone().hint {
+                @if let Some(hint) = self.props.clone().hint {
                     div class="form-text" {(hint)}
                 }
             }
@@ -89,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_empty() {
-        let text = TextField::text("name", "Name", None);
+        let text = TextField::text("name", "Name");
 
         assert_eq!(
             text.render().into_string(),
@@ -103,7 +101,7 @@ mod tests {
 
     #[test]
     fn test_with_class() {
-        let text = TextField::text("name", "Name", None).class("mb-3");
+        let text = TextField::text("name", "Name").class("mb-3");
 
         assert_eq!(
             text.render().into_string(),
@@ -117,10 +115,9 @@ mod tests {
 
     #[test]
     fn test_id_and_hint() {
-        let opt = TagOptions::new().id("my_id").hint("indice");
-        let text = TextField::text("name", "Name", None)
-            .class("mb-3")
-            .options(opt);
+        let text = TextField::text("name", "Name")
+            .props(Props::default().id("my_id").hint("indice"))
+            .class("mb-3");
 
         assert_eq!(
             text.render().into_string(),
@@ -135,11 +132,10 @@ mod tests {
     }
 
     #[test]
-    fn test_placeholder() {
-        let opt = TagOptions::new().hint("indice");
-        let text = TextField::text("name", "Name", None)
+    fn test_hint() {
+        let text = TextField::text("name", "Name")
             .class("mb-3")
-            .options(opt);
+            .props(Props::default().hint("indice"));
 
         assert_eq!(
             text.render().into_string(),
@@ -155,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_email() {
-        let text = TextField::email("name", "Name", None);
+        let text = TextField::email("name", "Name");
 
         assert_eq!(
             text.render().into_string(),
