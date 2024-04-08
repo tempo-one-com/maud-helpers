@@ -26,6 +26,10 @@ impl ValidationErrors {
     pub fn get(&self, key: &str) -> Option<String> {
         self.errors.get(key).cloned()
     }
+
+    pub fn is_ok(&self) -> bool {
+        self.errors.is_empty()
+    }
 }
 
 impl Default for ValidationErrors {
