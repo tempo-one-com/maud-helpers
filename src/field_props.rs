@@ -5,7 +5,6 @@ pub struct Props {
     pub hint: Option<String>,
     pub required: bool,
     pub placeholder: Option<String>,
-    pub error: Option<String>,
 }
 
 pub type DynOptionalString = dyn Into<String>;

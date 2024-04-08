@@ -1,6 +1,6 @@
 use maud::{html, Markup, Render};
 
-use crate::field_props::Props;
+use crate::{error::ValidationErrors, field_props::Props};
 
 #[derive(Clone, Debug, Default)]
 pub enum TextFieldType {
@@ -18,6 +18,7 @@ pub struct TextField {
     my_type: TextFieldType,
     class: String,
     props: Props,
+    errors: ValidationErrors,
 }
 
 impl TextField {
@@ -53,6 +54,10 @@ impl TextField {
             ..self
         }
     }
+
+    pub fn errors(self, errors: ValidationErrors) -> Self {
+        Self { errors, ..self }
+    }
 }
 
 impl Render for TextField {
@@ -76,6 +81,9 @@ impl Render for TextField {
                 @if let Some(hint) = self.props.clone().hint {
                     div class="form-text" {(hint)}
                 }
+                @if let Some(error) = self.errors.get(&self.name) {
+                    div class="invalid-feedback" {(error)}
+                }
             }
         )
     }
@@ -83,6 +91,8 @@ impl Render for TextField {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::ValidationErrors;
+
     use super::*;
 
     #[test]
@@ -159,6 +169,26 @@ mod tests {
                 r#"<div class="form-floating">"#,
                 r#"<input type="email" class="form-control" name="name">"#,
                 r#"<label>Name</label>"#,
+                r#"</div>"#
+            )
+        );
+    }
+
+    #[test]
+    fn test_error() {
+        let mut errors = ValidationErrors::default();
+        errors.set_default("name");
+        let text = TextField::text("name", "Name")
+            .props(Props::default())
+            .errors(errors);
+
+        assert_eq!(
+            text.render().into_string(),
+            concat!(
+                r#"<div class="form-floating">"#,
+                r#"<input type="text" class="form-control" name="name">"#,
+                r#"<label>Name</label>"#,
+                r#"<div class="invalid-feedback">valeur incorrecte</div>"#,
                 r#"</div>"#
             )
         );

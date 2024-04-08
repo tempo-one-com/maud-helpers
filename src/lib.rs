@@ -1,4 +1,5 @@
 pub mod checkbox;
+pub mod error;
 pub mod field;
 pub mod field_props;
 //pub mod grid;

@@ -1,6 +1,7 @@
 use maud::{html, Markup, Render};
 
 use crate::{
+    error::ValidationErrors,
     field_props::Props,
     key_value::{KeyValue, KeyValueInterface},
 };
@@ -12,6 +13,7 @@ pub struct Select {
     class: String,
     items: Vec<KeyValue>,
     props: Props,
+    errors: ValidationErrors,
 }
 
 impl Select {
@@ -58,6 +60,10 @@ impl Select {
             ..self
         }
     }
+
+    pub fn errors(self, errors: ValidationErrors) -> Self {
+        Self { errors, ..self }
+    }
 }
 
 impl Render for Select {
@@ -75,6 +81,9 @@ impl Render for Select {
                     selected[(self.checked_option(self.props.value.clone(), &item.key))]  {(item.value)};
             }}
             label {(self.label)}
+            @if let Some(error) = self.errors.get(&self.name) {
+                div class="invalid-feedback" {(error)}
+            }
         })
     }
 }
@@ -187,5 +196,15 @@ mod tests {
                 r#"</div>"#,
             )
         );
+    }
+
+    #[test]
+    fn select_error() {
+        let select = Select::simple("name", "", &vec![Toto::new(1, "")]);
+        let matching_selection = select.checked_option(Some("toto"), "toto");
+        let none_matching_selection = select.checked_option(Some("toto".to_string()), "titi");
+
+        assert!(matching_selection);
+        assert!(!none_matching_selection);
     }
 }
