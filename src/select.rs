@@ -61,8 +61,11 @@ impl Select {
         }
     }
 
-    pub fn errors(self, errors: ValidationErrors) -> Self {
-        Self { errors, ..self }
+    pub fn errors(self, errors: &ValidationErrors) -> Self {
+        Self {
+            errors: errors.to_owned(),
+            ..self
+        }
     }
 }
 
@@ -90,9 +93,10 @@ impl Render for Select {
 
 #[cfg(test)]
 mod tests {
-    use maud::html;
+    use maud::{html, Render};
 
     use crate::{
+        error::ValidationErrors,
         field_props::Props,
         key_value::{KeyValue, KeyValueInterface},
         select::Select,
@@ -200,11 +204,21 @@ mod tests {
 
     #[test]
     fn select_error() {
-        let select = Select::simple("name", "", &vec![Toto::new(1, "")]);
-        let matching_selection = select.checked_option(Some("toto"), "toto");
-        let none_matching_selection = select.checked_option(Some("toto".to_string()), "titi");
+        let mut validation = ValidationErrors::default();
+        validation.set_default("name");
+        let select = Select::simple("name", "", &vec![Toto::new(1, "")]).errors(&validation);
 
-        assert!(matching_selection);
-        assert!(!none_matching_selection);
+        assert_eq!(
+            select.render().into_string(),
+            concat!(
+                r#"<div class="form-floating">"#,
+                r#"<select name="name" class="form-select">"#,
+                r#"<option value="1"></option>"#,
+                r#"</select>"#,
+                r#"<label></label>"#,
+                r#"<div class="invalid-feedback">valeur incorrecte</div>"#,
+                r#"</div>"#,
+            )
+        )
     }
 }

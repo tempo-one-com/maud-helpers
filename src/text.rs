@@ -55,8 +55,11 @@ impl TextField {
         }
     }
 
-    pub fn errors(self, errors: ValidationErrors) -> Self {
-        Self { errors, ..self }
+    pub fn errors(self, errors: &ValidationErrors) -> Self {
+        Self {
+            errors: errors.to_owned(),
+            ..self
+        }
     }
 }
 
@@ -176,11 +179,11 @@ mod tests {
 
     #[test]
     fn test_error() {
-        let mut errors = ValidationErrors::default();
-        errors.set_default("name");
+        let mut validation = ValidationErrors::default();
+        validation.set_default("name");
         let text = TextField::text("name", "Name")
             .props(Props::default())
-            .errors(errors);
+            .errors(&validation);
 
         assert_eq!(
             text.render().into_string(),
