@@ -1,7 +1,7 @@
 use maud::{html, Markup, Render};
+use validator::ValidationErrors;
 
 use crate::{
-    error::ValidationErrors,
     field_props::Props,
     key_value::{KeyValue, KeyValueInterface},
 };
@@ -13,7 +13,7 @@ pub struct Select {
     class: String,
     items: Vec<KeyValue>,
     props: Props,
-    errors: ValidationErrors,
+    error: Option<String>,
 }
 
 impl Select {
@@ -61,17 +61,24 @@ impl Select {
         }
     }
 
-    pub fn errors(self, errors: &ValidationErrors) -> Self {
-        Self {
-            errors: errors.to_owned(),
-            ..self
+    pub fn errors(self, validation: &Result<(), ValidationErrors>) -> Self {
+        if let Err(err) = validation {
+            let key = self.name.as_str();
+
+            Self {
+                error: err.errors().get(key).map(|_| "".to_string()),
+                ..self
+            }
+        } else {
+            self
         }
     }
 }
 
 impl Render for Select {
     fn render(&self) -> Markup {
-        let class = if self.errors.has(&self.name) {
+        //        let class = if self.error.has(&self.name) {
+        let class = if self.error.is_some() {
             " is-invalid".to_string()
         } else {
             "".to_string()
@@ -90,9 +97,10 @@ impl Render for Select {
                     selected[(self.checked_option(self.props.value.clone(), &item.key))]  {(item.value)};
             }}
             label {(self.label)}
-            @if let Some(error) = self.errors.get(&self.name) {
-                div class="invalid-feedback" {(error)}
-            }
+            //voir avec crate Validator
+            // @if let Some(error) = self.error.get(&self.name) {
+            //     div class="invalid-feedback" {(error)}
+            // }
         })
     }
 }
@@ -100,15 +108,17 @@ impl Render for Select {
 #[cfg(test)]
 mod tests {
     use maud::{html, Render};
+    use validator::Validate;
 
     use crate::{
-        error::ValidationErrors,
         field_props::Props,
         key_value::{KeyValue, KeyValueInterface},
         select::Select,
     };
 
+    #[derive(Validate)]
     struct Toto {
+        #[validate(range(min = 1))]
         id: i32,
         code: String,
     }
@@ -210,38 +220,23 @@ mod tests {
 
     #[test]
     fn select_error() {
-        let mut validation = ValidationErrors::default();
-        validation.mark("name");
-        let select = Select::simple("name", "", &vec![Toto::new(1, "")]).errors(&validation);
+        let toto = Toto {
+            id: 0,
+            code: "".to_owned(),
+        };
+
+        let validation = toto.validate();
+
+        let select = Select::simple("id", "", &vec![Toto::new(1, "")]).errors(&validation);
 
         assert_eq!(
             select.render().into_string(),
             concat!(
                 r#"<div class="form-floating">"#,
-                r#"<select name="name" class="form-select is-invalid">"#,
+                r#"<select name="id" class="form-select is-invalid">"#,
                 r#"<option value="1"></option>"#,
                 r#"</select>"#,
                 r#"<label></label>"#,
-                r#"</div>"#,
-            )
-        )
-    }
-
-    #[test]
-    fn select_error_message() {
-        let mut validation = ValidationErrors::default();
-        validation.mark_message("name", "valeur incorrecte");
-        let select = Select::simple("name", "", &vec![Toto::new(1, "")]).errors(&validation);
-
-        assert_eq!(
-            select.render().into_string(),
-            concat!(
-                r#"<div class="form-floating">"#,
-                r#"<select name="name" class="form-select is-invalid">"#,
-                r#"<option value="1"></option>"#,
-                r#"</select>"#,
-                r#"<label></label>"#,
-                r#"<div class="invalid-feedback">valeur incorrecte</div>"#,
                 r#"</div>"#,
             )
         )

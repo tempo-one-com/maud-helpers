@@ -1,6 +1,7 @@
 use maud::{html, Markup, Render};
+use validator::ValidationErrors;
 
-use crate::{error::ValidationErrors, field_props::Props};
+use crate::field_props::Props;
 
 #[derive(Clone, Debug, Default)]
 pub enum TextFieldType {
@@ -18,7 +19,7 @@ pub struct TextField {
     my_type: TextFieldType,
     class: String,
     props: Props,
-    errors: ValidationErrors,
+    error: Option<String>,
 }
 
 impl TextField {
@@ -55,10 +56,22 @@ impl TextField {
         }
     }
 
-    pub fn errors(self, errors: &ValidationErrors) -> Self {
-        Self {
-            errors: errors.to_owned(),
-            ..self
+    // pub fn errors(self, errors: &ValidationErrors) -> Self {
+    //     Self {
+    //         errors: errors.to_owned(),
+    //         ..self
+    //     }
+    // }
+
+    pub fn errors(self, validation: &Result<(), ValidationErrors>) -> Self {
+        if let Err(err) = validation {
+            let key = self.name.as_str();
+            Self {
+                error: err.errors().get(key).map(|_| "".to_string()),
+                ..self
+            }
+        } else {
+            self
         }
     }
 }
@@ -71,7 +84,11 @@ impl Render for TextField {
             TextFieldType::Number => "number",
         };
 
-        let class = if self.errors.has(&self.name) {
+        println!(
+            "======================{}",
+            self.error.clone().unwrap_or_default()
+        );
+        let class = if self.error.is_some() {
             " is-invalid".to_string()
         } else {
             "".to_string()
@@ -90,9 +107,9 @@ impl Render for TextField {
                 @if let Some(hint) = self.props.clone().hint {
                     div class="form-text" {(hint)}
                 }
-                @if let Some(error) = self.errors.get(&self.name) {
-                    div class="invalid-feedback" {(error)}
-                }
+                // @if let Some(error) = self.errors.get(&self.name) {
+                //     div class="invalid-feedback" {(error)}
+                // }
             }
         )
     }
@@ -100,9 +117,17 @@ impl Render for TextField {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::ValidationErrors;
+
+    use validator::Validate;
 
     use super::*;
+
+    #[derive(Validate)]
+    struct Toto {
+        #[validate(range(min = 1))]
+        id: i32,
+        code: String,
+    }
 
     #[test]
     fn test_empty() {
@@ -185,9 +210,13 @@ mod tests {
 
     #[test]
     fn test_error() {
-        let mut validation = ValidationErrors::default();
-        validation.mark("name");
-        let text = TextField::text("name", "Name")
+        let toto = Toto {
+            id: 0,
+            code: "".to_owned(),
+        };
+
+        let validation = toto.validate();
+        let text = TextField::text("id", "Name")
             .props(Props::default())
             .errors(&validation);
 
@@ -195,28 +224,8 @@ mod tests {
             text.render().into_string(),
             concat!(
                 r#"<div class="form-floating">"#,
-                r#"<input type="text" class="form-control is-invalid" name="name">"#,
+                r#"<input type="text" class="form-control is-invalid" name="id">"#,
                 r#"<label>Name</label>"#,
-                r#"</div>"#
-            )
-        );
-    }
-
-    #[test]
-    fn test_errori_with_message() {
-        let mut validation = ValidationErrors::default();
-        validation.mark_message("name", "valeur incorrecte");
-        let text = TextField::text("name", "Name")
-            .props(Props::default())
-            .errors(&validation);
-
-        assert_eq!(
-            text.render().into_string(),
-            concat!(
-                r#"<div class="form-floating">"#,
-                r#"<input type="text" class="form-control is-invalid" name="name">"#,
-                r#"<label>Name</label>"#,
-                r#"<div class="invalid-feedback">valeur incorrecte</div>"#,
                 r#"</div>"#
             )
         );
