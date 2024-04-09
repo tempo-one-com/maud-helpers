@@ -61,28 +61,24 @@ impl Select {
         }
     }
 
-    pub fn errors(self, validation: &Result<(), ValidationErrors>) -> Self {
-        if let Err(err) = validation {
-            let key = self.name.as_str();
-
-            Self {
-                error: err.errors().get(key).map(|_| "".to_string()),
-                ..self
-            }
-        } else {
-            self
+    pub fn errors(self, validation: &ValidationErrors) -> Self {
+        Self {
+            error: validation
+                .errors()
+                .get(self.name.as_str())
+                .map(|_| "".to_string()),
+            ..self
         }
     }
 }
 
 impl Render for Select {
     fn render(&self) -> Markup {
-        //        let class = if self.error.has(&self.name) {
-        let class = if self.error.is_some() {
-            " is-invalid".to_string()
-        } else {
-            "".to_string()
-        };
+        let class = self
+            .error
+            .clone()
+            .map(|_| " is-invalid".to_string())
+            .unwrap_or_default();
 
         html!(
             div class=(self.class) {
@@ -225,9 +221,9 @@ mod tests {
             code: "".to_owned(),
         };
 
-        let validation = toto.validate();
+        let validation = toto.validate().err();
 
-        let select = Select::simple("id", "", &vec![Toto::new(1, "")]).errors(&validation);
+        let select = Select::simple("id", "", &vec![Toto::new(1, "")]).errors(&validation.unwrap());
 
         assert_eq!(
             select.render().into_string(),

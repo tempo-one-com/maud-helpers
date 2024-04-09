@@ -56,22 +56,13 @@ impl TextField {
         }
     }
 
-    // pub fn errors(self, errors: &ValidationErrors) -> Self {
-    //     Self {
-    //         errors: errors.to_owned(),
-    //         ..self
-    //     }
-    // }
-
-    pub fn errors(self, validation: &Result<(), ValidationErrors>) -> Self {
-        if let Err(err) = validation {
-            let key = self.name.as_str();
-            Self {
-                error: err.errors().get(key).map(|_| "".to_string()),
-                ..self
-            }
-        } else {
-            self
+    pub fn errors(self, validation: &ValidationErrors) -> Self {
+        Self {
+            error: validation
+                .errors()
+                .get(self.name.as_str())
+                .map(|_| "".to_string()),
+            ..self
         }
     }
 }
@@ -84,15 +75,11 @@ impl Render for TextField {
             TextFieldType::Number => "number",
         };
 
-        println!(
-            "======================{}",
-            self.error.clone().unwrap_or_default()
-        );
-        let class = if self.error.is_some() {
-            " is-invalid".to_string()
-        } else {
-            "".to_string()
-        };
+        let class = self
+            .error
+            .clone()
+            .map(|_| " is-invalid".to_string())
+            .unwrap_or_default();
 
         html!(
             div class=(self.class) {
@@ -107,9 +94,6 @@ impl Render for TextField {
                 @if let Some(hint) = self.props.clone().hint {
                     div class="form-text" {(hint)}
                 }
-                // @if let Some(error) = self.errors.get(&self.name) {
-                //     div class="invalid-feedback" {(error)}
-                // }
             }
         )
     }
@@ -215,10 +199,10 @@ mod tests {
             code: "".to_owned(),
         };
 
-        let validation = toto.validate();
+        let validation = toto.validate().err();
         let text = TextField::text("id", "Name")
             .props(Props::default())
-            .errors(&validation);
+            .errors(&validation.unwrap());
 
         assert_eq!(
             text.render().into_string(),
