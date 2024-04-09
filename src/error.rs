@@ -27,6 +27,10 @@ impl ValidationErrors {
         self.errors.get(key).cloned()
     }
 
+    pub fn has(&self, key: &str) -> bool {
+        self.errors.contains_key(key)
+    }
+
     pub fn is_ok(&self) -> bool {
         self.errors.is_empty()
     }

@@ -71,11 +71,17 @@ impl Select {
 
 impl Render for Select {
     fn render(&self) -> Markup {
+        let class = if self.errors.has(&self.name) {
+            " is-invalid".to_string()
+        } else {
+            "".to_string()
+        };
+
         html!(
             div class=(self.class) {
             select
                 name=(self.name)
-                class="form-select"
+                class={"form-select"(class)}
                 id=[self.props.clone().id]
                {
             @for item in &self.items {
@@ -212,7 +218,7 @@ mod tests {
             select.render().into_string(),
             concat!(
                 r#"<div class="form-floating">"#,
-                r#"<select name="name" class="form-select">"#,
+                r#"<select name="name" class="form-select is-invalid">"#,
                 r#"<option value="1"></option>"#,
                 r#"</select>"#,
                 r#"<label></label>"#,

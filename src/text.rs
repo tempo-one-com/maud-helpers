@@ -71,11 +71,17 @@ impl Render for TextField {
             TextFieldType::Number => "number",
         };
 
+        let class = if self.errors.has(&self.name) {
+            " is-invalid".to_string()
+        } else {
+            "".to_string()
+        };
+
         html!(
             div class=(self.class) {
                 input
                     type=(type_str)
-                    class="form-control"
+                    class={"form-control"(class)}
                     name=(self.name)
                     id=[self.props.clone().id]
                     value=[self.props.value.clone()]
@@ -189,7 +195,7 @@ mod tests {
             text.render().into_string(),
             concat!(
                 r#"<div class="form-floating">"#,
-                r#"<input type="text" class="form-control" name="name">"#,
+                r#"<input type="text" class="form-control is-invalid" name="name">"#,
                 r#"<label>Name</label>"#,
                 r#"<div class="invalid-feedback">valeur incorrecte</div>"#,
                 r#"</div>"#
