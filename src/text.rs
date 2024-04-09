@@ -186,7 +186,26 @@ mod tests {
     #[test]
     fn test_error() {
         let mut validation = ValidationErrors::default();
-        validation.set_default("name");
+        validation.mark("name");
+        let text = TextField::text("name", "Name")
+            .props(Props::default())
+            .errors(&validation);
+
+        assert_eq!(
+            text.render().into_string(),
+            concat!(
+                r#"<div class="form-floating">"#,
+                r#"<input type="text" class="form-control is-invalid" name="name">"#,
+                r#"<label>Name</label>"#,
+                r#"</div>"#
+            )
+        );
+    }
+
+    #[test]
+    fn test_errori_with_message() {
+        let mut validation = ValidationErrors::default();
+        validation.mark_message("name", "valeur incorrecte");
         let text = TextField::text("name", "Name")
             .props(Props::default())
             .errors(&validation);

@@ -211,7 +211,26 @@ mod tests {
     #[test]
     fn select_error() {
         let mut validation = ValidationErrors::default();
-        validation.set_default("name");
+        validation.mark("name");
+        let select = Select::simple("name", "", &vec![Toto::new(1, "")]).errors(&validation);
+
+        assert_eq!(
+            select.render().into_string(),
+            concat!(
+                r#"<div class="form-floating">"#,
+                r#"<select name="name" class="form-select is-invalid">"#,
+                r#"<option value="1"></option>"#,
+                r#"</select>"#,
+                r#"<label></label>"#,
+                r#"</div>"#,
+            )
+        )
+    }
+
+    #[test]
+    fn select_error_message() {
+        let mut validation = ValidationErrors::default();
+        validation.mark_message("name", "valeur incorrecte");
         let select = Select::simple("name", "", &vec![Toto::new(1, "")]).errors(&validation);
 
         assert_eq!(
